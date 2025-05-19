@@ -1,0 +1,11 @@
+# Development and testing dependencies
+pytest==7.4.0
+pytest-cov==4.1.0
+moto==4.2.5
+requests==2.32.2
+docker==7.0.0  # Required for moto's Lambda mocking
+openapi_spec_validator==0.7.1  # Required for moto's API Gateway mocking
+reportlab==4.0.4  # Required for PDF generation
+
+# Include production dependencies
+-r requirements.txt

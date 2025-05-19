@@ -1,0 +1,14 @@
+version = 0.1
+
+[default]
+[default.deploy]
+[default.deploy.parameters]
+stack_name = "HelloWorldApiStack"
+s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket"
+s3_prefix = "HelloWorldApiStack"
+region = "us-east-1"
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "LambdaFunctionName=HelloWorldFunction-Automated ApiGatewayName=HelloWorldAPI-Automated StageName=prod"
+confirm_changeset = false
+fail_on_empty_changeset = false
+no_execute_changeset = false

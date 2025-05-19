@@ -1,0 +1,363 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Hello World API using Lambda and API Gateway'
+
+Parameters:
+  LambdaFunctionName:
+    Type: String
+    Default: HelloWorldFunction
+    Description: Base name of the Lambda function (will be combined with stage and timestamp)
+  PdfHashLambdaFunctionName:
+    Type: String
+    Default: PdfHashFunction
+    Description: Base name of the PDF Hash Lambda function (will be combined with stage and timestamp)
+  ApiGatewayName:
+    Type: String
+    Default: HelloWorldAPI-Automated
+    Description: Name of the API Gateway
+  StageName:
+    Type: String
+    Default: prod
+    Description: Name of the deployment stage
+  DeploymentTimestamp:
+    Type: String
+    Default: "0"
+    Description: Timestamp of the deployment (will be provided by deployment script)
+  ApiKeyName:
+    Type: String
+    Default: "HelloWorldApiKey_${DeploymentTimestamp}"
+    Description: Name of the API Key with unique suffix
+  UsagePlanName:
+    Type: String
+    Default: "HelloWorldUsagePlan_${DeploymentTimestamp}"
+    Description: Name of the Usage Plan with unique suffix
+  ProjectIdentifier:
+    Type: String
+    Default: "helloworld"
+    Description: Project identifier for resource naming
+
+Resources:
+  # IAM Role for Lambda function
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      # Removed RoleName to let CloudFormation generate a unique name
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  # Lambda Function
+  HelloWorldFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub "${LambdaFunctionName}_${StageName}_${DeploymentTimestamp}"
+      Handler: lambda_function.lambda_handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Code:
+        ZipFile: |
+          # This is a placeholder. The actual code will be deployed separately.
+          def lambda_handler(event, context):
+              return {
+                  'statusCode': 200,
+                  'body': '{"message":"Hello World"}'
+              }
+      Runtime: python3.11
+      Timeout: 10
+      MemorySize: 128
+      Environment:
+        Variables:
+          ENVIRONMENT: !Ref StageName
+
+  # S3 Bucket for PDF Storage
+  PdfStorageBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      # Generate a globally unique bucket name following naming best practices
+      # Format: [project]-pdf-[stage]-[region-abbr]-[acct-suffix]-[timestamp]
+      # This ensures the name is always under 63 characters
+      BucketName: !Join
+        - '-'
+        - - !Ref ProjectIdentifier
+          - 'pdf'
+          - !Ref StageName
+          - !Select [0, !Split ["-", !Ref AWS::Region]]
+          - !Select [0, !Split ["-", !Sub "${AWS::AccountId}-suffix"]]
+          - !Select [0, !Split ["-", !Ref DeploymentTimestamp]]
+      AccessControl: Private
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      LifecycleConfiguration:
+        Rules:
+          - Id: DeleteAfter30Days
+            Status: Enabled
+            ExpirationInDays: 30
+
+  # IAM Role for PDF Hash Lambda function with S3 access
+  PdfHashLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: S3Access
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                Resource:
+                  - !Sub arn:aws:s3:::${PdfStorageBucket}/*
+
+  # PDF Hash Lambda Function
+  PdfHashFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub "${PdfHashLambdaFunctionName}_${StageName}_${DeploymentTimestamp}"
+      Handler: pdf_hash_lambda.lambda_handler
+      Role: !GetAtt PdfHashLambdaRole.Arn
+      Code:
+        ZipFile: |
+          # This is a placeholder. The actual code will be deployed separately.
+          def lambda_handler(event, context):
+              return {
+                  'statusCode': 200,
+                  'body': '{"message":"PDF Hash Function"}'
+              }
+      Runtime: python3.11
+      Timeout: 30
+      MemorySize: 256
+      Environment:
+        Variables:
+          ENVIRONMENT: !Ref StageName
+          S3_BUCKET_NAME: !Ref PdfStorageBucket
+
+  # Store the S3 bucket name in Parameter Store for easy access
+  S3BucketNameParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "/helloworld/${StageName}/s3-bucket-name"
+      Type: String
+      Value: !Ref PdfStorageBucket
+      Description: S3 bucket name for PDF storage
+
+  # API Gateway REST API
+  HelloWorldApi:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: !Ref ApiGatewayName
+      Description: API for Hello World Lambda function
+      EndpointConfiguration:
+        Types:
+          - REGIONAL
+
+  # API Gateway Resource for /hello
+  HelloResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref HelloWorldApi
+      ParentId: !GetAtt HelloWorldApi.RootResourceId
+      PathPart: hello
+
+  # API Gateway Resource for /pdf-hash
+  PdfHashResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref HelloWorldApi
+      ParentId: !GetAtt HelloWorldApi.RootResourceId
+      PathPart: pdf-hash
+
+  # API Gateway Method for GET
+  HelloMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref HelloWorldApi
+      ResourceId: !Ref HelloResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      ApiKeyRequired: true
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${HelloWorldFunction.Arn}/invocations
+      MethodResponses:
+        - StatusCode: 200
+          ResponseModels:
+            application/json: 'Empty'
+
+  # API Gateway Method for POST
+  HelloPostMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref HelloWorldApi
+      ResourceId: !Ref HelloResource
+      HttpMethod: POST
+      AuthorizationType: NONE
+      ApiKeyRequired: true
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${HelloWorldFunction.Arn}/invocations
+      MethodResponses:
+        - StatusCode: 200
+          ResponseModels:
+            application/json: 'Empty'
+
+  # API Gateway Method for PDF Hash POST
+  PdfHashPostMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref HelloWorldApi
+      ResourceId: !Ref PdfHashResource
+      HttpMethod: POST
+      AuthorizationType: NONE
+      ApiKeyRequired: true
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${PdfHashFunction.Arn}/invocations
+      MethodResponses:
+        - StatusCode: 200
+          ResponseModels:
+            application/json: 'Empty'
+
+  # API Gateway Deployment
+  ApiDeployment:
+    Type: AWS::ApiGateway::Deployment
+    DependsOn: 
+      - HelloMethod
+      - HelloPostMethod
+      - PdfHashPostMethod
+    Properties:
+      RestApiId: !Ref HelloWorldApi
+      Description: Deployment for Hello World API
+
+  # API Gateway Stage
+  ApiStage:
+    Type: AWS::ApiGateway::Stage
+    Properties:
+      DeploymentId: !Ref ApiDeployment
+      RestApiId: !Ref HelloWorldApi
+      StageName: !Ref StageName
+
+  # Lambda Permission for API Gateway GET method
+  LambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref HelloWorldFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HelloWorldApi}/*/GET/hello
+
+  # Lambda Permission for API Gateway POST method
+  LambdaPostPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref HelloWorldFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HelloWorldApi}/*/POST/hello
+
+  # Lambda Permission for PDF Hash API Gateway POST method
+  PdfHashLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref PdfHashFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HelloWorldApi}/*/POST/pdf-hash
+
+  # API Key for throttling and access control
+  HelloWorldApiKey:
+    Type: AWS::ApiGateway::ApiKey
+    DependsOn: 
+      - ApiStage
+      - HelloMethod
+      - HelloPostMethod
+      - PdfHashPostMethod
+    Properties:
+      Name: !Sub ${ApiKeyName}
+      Description: API Key for Hello World API
+      Enabled: true
+      StageKeys:
+        - RestApiId: !Ref HelloWorldApi
+          StageName: !Ref StageName
+
+  # Usage Plan for throttling
+  HelloWorldUsagePlan:
+    Type: AWS::ApiGateway::UsagePlan
+    DependsOn: 
+      - ApiStage
+      - HelloWorldApiKey
+    Properties:
+      UsagePlanName: !Sub ${UsagePlanName}
+      Description: Usage plan for Hello World API with strict throttling (2 requests per minute)
+      ApiStages:
+        - ApiId: !Ref HelloWorldApi
+          Stage: !Ref StageName
+      Throttle:
+        RateLimit: 0.033
+        BurstLimit: 2
+
+  # Associate API Key with Usage Plan
+  HelloWorldUsagePlanKey:
+    Type: AWS::ApiGateway::UsagePlanKey
+    DependsOn: HelloWorldUsagePlan
+    Properties:
+      KeyId: !Ref HelloWorldApiKey
+      KeyType: API_KEY
+      UsagePlanId: !Ref HelloWorldUsagePlan
+
+  DeploymentTimestampParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: "/helloworld/deployment/timestamp"
+      Type: String
+      Value: !Ref DeploymentTimestamp
+
+Outputs:
+  ApiEndpoint:
+    Description: URL of the API endpoint
+    Value: !Sub https://${HelloWorldApi}.execute-api.${AWS::Region}.amazonaws.com/${StageName}/hello
+  
+  PdfHashApiEndpoint:
+    Description: URL of the PDF Hash API endpoint
+    Value: !Sub https://${HelloWorldApi}.execute-api.${AWS::Region}.amazonaws.com/${StageName}/pdf-hash
+  
+  ApiKeyId:
+    Description: ID of the API Key
+    Value: !Ref HelloWorldApiKey
+  
+  LambdaFunction:
+    Description: Name of the Lambda function
+    Value: !Ref HelloWorldFunction
+
+  PdfHashFunction:
+    Description: Name of the PDF Hash Lambda function
+    Value: !Ref PdfHashFunction
+
+  ApiGateway:
+    Description: ID of the API Gateway
+    Value: !Ref HelloWorldApi
+
+  S3BucketName:
+    Description: Name of the S3 bucket for PDF storage
+    Value: !Ref PdfStorageBucket
