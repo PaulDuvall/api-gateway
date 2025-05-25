@@ -34,7 +34,7 @@ jobs:
       - name: Configure AWS credentials via OIDC
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.GHA_OIDC_ROLE_ARN }}
-          aws-region: ${{ secrets.AWS_DEFAULT_REGION || 'us-east-1' }}
+          role-to-assume: ${{ vars.GHA_OIDC_ROLE_ARN }}
+          aws-region: us-east-1
       - name: Run all (build, test, deploy)
         run: ./run.sh all
