@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+# Trigger GHA build: trivial change
 
 """
 Lambda function for the Hello World API.
