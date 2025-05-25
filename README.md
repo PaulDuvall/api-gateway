@@ -66,6 +66,34 @@ Runs all tests in `tests/`.
 - See `.awssecurityrules.md`, `.iamrolerules.md` for security policies
 - API keys managed securely, never committed
 
+## GitHub Actions OIDC Setup for AWS
+
+This project supports secure, secretless AWS authentication in CI/CD using GitHub Actions OIDC and the [`gha-aws-oidc-bootstrap`](https://github.com/PaulDuvall/gha-aws-oidc-bootstrap) repository.
+
+### Why OIDC?
+- Removes the need to store AWS credentials as GitHub secrets
+- Uses short-lived, least-privilege credentials for each workflow run
+- Follows AWS and GitHub security best practices
+
+### Setup Instructions
+1. **Bootstrap AWS OIDC trust for your GitHub repo:**
+   - Follow the instructions in [gha-aws-oidc-bootstrap](https://github.com/PaulDuvall/gha-aws-oidc-bootstrap#quickstart) to create the required IAM roles and trust relationships for your repo.
+   - Example:
+     ```bash
+     git clone https://github.com/PaulDuvall/gha-aws-oidc-bootstrap.git
+     cd gha-aws-oidc-bootstrap
+     ./bootstrap.sh --repo PaulDuvall/api-gateway --region us-east-1
+     ```
+   - This will output the IAM Role ARN to use in your workflow.
+2. **Update your GitHub Actions workflow** to use the OIDC role:
+   - See the workflow section below for usage.
+3. **Remove static AWS credentials** from GitHub secrets if present.
+
+### Usage in GitHub Actions
+- The workflow automatically authenticates to AWS using the OIDC role.
+- No need to set `AWS_ACCESS_KEY_ID` or `AWS_SECRET_ACCESS_KEY` secrets.
+- See `.github/workflows/run-all.yml` for an example.
+
 ## Documentation & Project Rules
 - Project rules: `.awssecurityrules.md`, `.cicdrules.md`, `.iamrolerules.md`, `.refactoringrules.md`, `.windsurfrules.md`, `global_rules.md`
 - Architecture diagrams: `docs/architecture_diagrams.md`
@@ -244,10 +272,9 @@ If you exceed these limits, you'll receive a 429 Too Many Requests response.
 ## Project Structure
 
 ```
-Project Structure
------------------
+## Project Structure
 
-```
+```text
 api-gateway/
 ├── src/
 │   └── api_gateway/
