@@ -1,297 +1,484 @@
-[![GitHub Actions Workflow Status](https://github.com/PaulDuvall/vibecoding/actions/workflows/vibe-coding-digest.yml/badge.svg)](https://github.com/PaulDuvall/vibecoding/actions/workflows/vibe-coding-digest.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-![Python](https://img.shields.io/badge/python-3.11-blue.svg)
-![GitHub last commit](https://img.shields.io/github/last-commit/PaulDuvall/vibecoding)
-[![LinkedIn-Follow](https://img.shields.io/badge/LinkedIn-Follow-blue)](https://www.linkedin.com/in/paulduvall/)
+# API Gateway & Lambda Automation Project
 
-# Vibe Coding: Automated Research Digest & Windsurf Standards
-
-This project uses **Windsurf** to manage and automate development standards, workflows, and persistent project knowledge. This approach ensures consistency, scalability, and rapid onboarding for all contributors.
+This repository implements a robust, production-ready API platform using AWS Lambda, API Gateway, and CloudFormation, following modern Python and DevOps best practices.
 
 ---
 
-## Vibe Digest Automation & Quality Workflow
+## Features
+- Python 3.11, modular code in `src/api_gateway/`
+- Lambda functions: `lambda_function.py`, `pdf_hash_lambda.py`
+- PDF hash client/service modules
+- Infrastructure as Code (IaC) with `template.yaml`
+- Parameter Store integration for configuration
+- Automated tests with pytest
+- Diagnostic script: `diagnose_api.sh`
+- Automated deployment: `run.sh` (see below)
+- API key management and throttling
+- CI/CD with GitHub Actions
+- Follows twelve-factor app methodology
+- Security best practices (see `.awssecurityrules.md`, `.iamrolerules.md`)
 
-### Overview
+## Prerequisites
+- Python 3.11+
+- AWS CLI configured
+- AWS account with permissions for Lambda, API Gateway, IAM, SSM
 
-**Vibe Digest** is an automated content aggregation and summarization tool that delivers curated, daily email digests of the most relevant developments in AI, developer tools, and emerging technology. See [`docs/prd.md`](docs/prd.md) for the Product Requirements Document (PRD), goals, and acceptance criteria.
+## Getting Started
 
-### Key Features
-- Aggregates RSS feeds from multiple sources
-- Summarizes content using OpenAI's API
-- Formats and sends a daily HTML digest via SendGrid
-- Designed for tech founders, engineers, and AI practitioners
-
-### Quality & CI/CD Workflow
-- **Linting:** Enforced via Flake8 (`./run.sh lint`)
-- **Testing:** Comprehensive pytest suite (`./run.sh test`)
-- **CI/CD:** Automated with GitHub Actions ([`.github/workflows/vibe-coding-digest.yml`](.github/workflows/vibe-coding-digest.yml))
-- **Secrets Scanning:** Enforced via Gitleaks in GitHub Actions (see `.github/workflows/vibe-coding-digest.yml`, per `.cicdrules.md`)
-- **All code and tests are PEP 8 compliant** as of the latest update
-- **Traceability:**
-  - Implementation: [`.github/scripts/vibe_digest.py`](.github/scripts/vibe_digest.py)
-  - CI/CD Security: [`.github/workflows/vibe-coding-digest.yml`](.github/workflows/vibe-coding-digest.yml) (Gitleaks secrets scanning)
-  - Tests: [`tests/test_vibe_digest.py`](tests/test_vibe_digest.py)
-  - Product requirements: [`docs/prd.md`](docs/prd.md)
-
-### Required Secrets for Deployment
-Set the following secrets in your GitHub repository for the workflow to function:
-- `OPENAI_API_KEY`: OpenAI API access
-- `SENDGRID_API_KEY`: SendGrid email service
-- `EMAIL_FROM`: Verified sender email address
-- `EMAIL_TO`: Recipient email address
-
----
-
-### Setting Up SendGrid for Email Delivery
-
-1. **Create a SendGrid Account**  
-   Sign up at [https://sendgrid.com/](https://sendgrid.com/).
-
-2. **Verify a Sender or Domain**  
-   - Go to **Settings > Sender Authentication** in the SendGrid dashboard.
-   - For testing, use **Single Sender Verification** (enter and verify your email).
-   - For production, use **Domain Authentication** (add DNS records and verify your domain).
-
-3. **Generate an API Key**  
-   - Go to **Settings > API Keys**.
-   - Click **Create API Key** (give it a name, e.g., `VibeDigest`).
-   - Select "Full Access" or at least "Mail Send" permissions.
-   - Click **Create & View** and **copy the API key** (you won't see it again).
-
-4. **Set GitHub Secrets**  
-   Use the [`scripts/set_github_secrets.sh`](scripts/set_github_secrets.sh) script or set secrets manually in your GitHub repository:
-   ```bash
-   ./scripts/set_github_secrets.sh <owner/repo>
-   ```
-   - `SENDGRID_API_KEY`: Your SendGrid API key
-   - `EMAIL_FROM`: Your verified sender email
-   - `EMAIL_TO`: Recipient email address
-
-5. **Test Your Setup**  
-   Trigger the workflow or run the script locally. Check your inbox for the digest.
-
-**Tip:** For best deliverability, use domain authentication and a sender address at your own domain.
-
----
-
-### Running Locally
+### Setup
 ```bash
-# Run linting
-./run.sh lint
+chmod +x run.sh
+./run.sh setup
+```
+Creates a virtualenv and installs all dependencies.
 
-# Run tests
+### Testing
+```bash
+./run.sh test
+```
+Runs all tests in `tests/`.
+
+### Deployment & Automation
+
+#### Complete Deployment
+```bash
+./run.sh all
+```
+- Sets up venv, runs tests, packages both Lambda functions, deploys via CloudFormation.
+
+#### Individual Steps
+- **Test only:** `./run.sh test`
+- **Package Lambda:** `./run.sh package`
+- **Package PDF Hash Lambda:** `./run.sh pdf-package`
+- **Deploy via CloudFormation:** `./run.sh cloudformation`
+- **Deploy Lambda only:** `./run.sh deploy`
+- **Update Lambda code only:** `./run.sh update-lambda`
+- **Update PDF Hash Lambda code only:** `./run.sh update-pdf-lambda`
+- **Test API endpoint:** `./run.sh test-api`
+- **Test PDF Hash API endpoint:** `./run.sh test-pdf-hash`
+
+### API Endpoints
+- Endpoints are output in `output.json` after deployment.
+- Example: `/prod/hello`, `/prod/pdf-hash`
+
+## Security & Best Practices
+- No secrets or credentials are tracked (see `.gitignore`)
+- See `.awssecurityrules.md`, `.iamrolerules.md` for security policies
+- API keys managed securely, never committed
+
+## Documentation & Project Rules
+- Project rules: `.awssecurityrules.md`, `.cicdrules.md`, `.iamrolerules.md`, `.refactoringrules.md`, `.windsurfrules.md`, `global_rules.md`
+- Architecture diagrams: `docs/architecture_diagrams.md`
+- For user stories and traceability, see `docs/user_stories.md`, `docs/traceability_matrix.md`
+
+## Contributing
+- Follow coding standards and rules in the `.md` rules files
+- All changes must pass tests and CI
+- Never commit secrets or sensitive data
+
+---
+
+For more details, see the documentation files in the repo. If you have questions or want to extend the platform, check the rules and standards before making changes.
+
+### Testing
+
+Run the tests to ensure everything is working correctly:
+
+```bash
 ./run.sh test
 ```
 
----
+### Creating a Deployment Package
 
-## How to Create an RSS Feed for a Google Alert
+Create a ZIP package for AWS Lambda deployment:
 
-You can use Google Alerts to track news, blogs, and forum posts for any search term, and receive updates via RSS. Here’s how to set up an RSS feed for a Google Alert:
+```bash
+./run.sh package
+```
 
-1. **Go to Google Alerts:**
-   - Visit [https://www.google.com/alerts](https://www.google.com/alerts) and sign in with your Google account.
+This will create `lambda_deployment_package.zip` in the project directory.
 
-2. **Create a New Alert:**
-   - In the search box, enter your desired query (e.g., `AI coding`, `GitHub Copilot`, `Vibe Coding`).
-   - Click “Show options” to adjust frequency, sources, language, and region as needed.
-   - For “Deliver to,” select **RSS feed** from the dropdown menu.
-   - Click **Create Alert**.
+## Deployment Options
 
-3. **Copy the RSS Feed URL:**
-   - After creating the alert, you’ll see it listed with an RSS icon next to it.
-   - Right-click the RSS icon and copy the link address (it will look like `https://www.google.com/alerts/feeds/XXXXXXXX/XXXXXXXX`).
+### Option 1: Complete Deployment (Recommended)
 
-4. **Add the Feed to Your Digest:**
-   - Add the RSS URL to your `FEEDS` list in `vibe_digest.py`.
-   - Add a human-friendly name to `FEED_SOURCES` in the same file for clarity.
+Run all steps (setup, test, package, and deploy) with a single command:
 
-**Example:**
-```python
-FEEDS = [
-    # ...other feeds...
-    "https://www.google.com/alerts/feeds/11805205268710618137/2009129731931801714",  # Google Alerts: Vibe Coding
-]
-FEED_SOURCES = {
-    # ...other sources...
-    "https://www.google.com/alerts/feeds/11805205268710618137/2009129731931801714": "Google Alerts: Vibe Coding",
+```bash
+./run.sh all
+```
+
+This will:
+1. Set up the Python virtual environment and install dependencies
+2. Run all tests to ensure everything is working correctly
+3. Create the Lambda deployment package
+4. Deploy everything using CloudFormation (Lambda function, API Gateway, IAM roles, etc.)
+
+### Option 2: CloudFormation Deployment
+
+Deploy the entire solution (Lambda function, API Gateway, IAM roles, and Parameter Store configuration) using CloudFormation:
+
+```bash
+./run.sh cloudformation
+```
+
+This will:
+1. Create or update a CloudFormation stack named "HelloWorldApiStack"
+2. Deploy all necessary resources
+3. Update the Lambda function code
+4. Provide you with the API endpoint URL
+
+### Option 3: Manual Lambda Deployment
+
+If you prefer to deploy just the Lambda function and configure API Gateway manually:
+
+```bash
+./run.sh deploy
+```
+
+This will:
+1. Create or update the Lambda function
+2. Add necessary permissions
+3. Guide you through the next steps for API Gateway setup
+
+## API Documentation
+
+### Endpoints
+
+#### GET /hello
+
+Returns a greeting message with the current timestamp.
+
+**Query Parameters:**
+
+- `name` (optional): Personalize the greeting with a name. Default: "World"
+
+**Authentication:**
+
+- Requires an API key in the `x-api-key` header
+
+**Response:**
+
+```json
+{
+  "message": "Hello, World! The time is 2025-03-23 10:10:15.",
+  "status": "success",
+  "timestamp": "2025-03-23T10:10:15.123456",
+  "version": "1.1.0",
+  "environment": "prod"
 }
 ```
 
----
+**Example Requests:**
 
-## Windsurf Vibe Coding vs. Cursor: Conceptual Analogs
+```bash
+# Basic request with API key
+curl -H "x-api-key: YOUR_API_KEY" "https://vnv8g46uml.execute-api.us-east-1.amazonaws.com/prod/hello"
 
-Both **Windsurf Vibe Coding** (Cascade) and **Cursor** are advanced AI-powered coding environments, but they use different terminology for similar concepts. Here’s how their core features map to each other:
+# With name parameter (note the quotes around the URL to escape the ? character in zsh/bash)
+curl -H "x-api-key: YOUR_API_KEY" "https://vnv8g46uml.execute-api.us-east-1.amazonaws.com/prod/hello?name=PMD"
+```
 
-### 1. Memories
+#### POST /hello
 
-- **Windsurf Vibe:**  
-  - “Memories” are persistent, workspace-specific records of context, user stories, architecture decisions, and more. Cascade (the AI agent) can generate or retrieve these to provide continuity and context-aware assistance.
-- **Cursor Analogs:**  
-  - **Codebase Indexing & Contextual Awareness:** Cursor indexes your codebase for deep contextual understanding.
-  - **Chat Context:** Cursor’s chat considers your current file, cursor, and explicit `@file` or `@symbol` mentions.
-  - **Project Rules as Persistent Context:** You can save summaries or procedures as Project Rules in `.cursor/rules` to provide future context—mimicking Windsurf’s Memories.
-  - **Agent Mode:** Cursor’s agent remembers the context of ongoing tasks, providing operational memory.
+Handles JSON payloads with `name` and optional `message` parameters.
 
-### 2. Rules
+**Request Body:**
 
-- **Windsurf Vibe:**  
-  - “Rules” are user-defined instructions (e.g., `global_rules.md`, `.windsurfrules.md`) that guide the AI’s behavior, enforce standards, and ensure consistency.
-- **Cursor Analogs:**  
-  - **Project Rules:** Located in `.cursor/rules`, these are version-controlled, support file pattern matching, git commit messages, and can be auto-attached or manually invoked.
-  - **User Rules:** Global, user-level rules set in Cursor’s settings, applying across all projects.
-  - **Generating Rules from Chat:** You can use `/Generate Cursor Rules` to create rules from conversations, similar to how Windsurf lets you persist learnings as rules.
+```json
+{
+  "name": "PostUser",
+  "message": "This is a POST request!"
+}
+```
 
-### 3. Workflows
+**Authentication:**
 
-- **Windsurf Vibe:**  
-  - “Workflows” are declarative, AI-driven automation units that orchestrate multi-step processes (e.g., build, test, deploy) and can reference rules and memories for context-aware execution.
-- **Cursor Analogs:**  
-  - **Agent Mode & Composer:** Cursor’s agent can plan and execute multi-step tasks, perform multi-file edits, run terminal commands, and loop on errors.
-  - **Multi-File Edits & Codebase Actions:** Supports complex refactoring and feature implementation.
-  - **Ctrl+K (Edit/Generate):** Enables in-place code modification or generation.
-  - **Terminal Integration:** Cursor can help script and run terminal commands.
-  - **Automated Error Detection:** Cursor can fix lint errors and automate debugging steps.
-  - **Customizable Rules for Workflow Automation:** Project Rules can automate and enforce workflow steps.
+- Requires an API key in the `x-api-key` header
 
----
+**Response:**
 
-### Summary Table
+```json
+{
+  "message": "Hello, PostUser! The time is 2025-03-25 22:15:30. This is a POST request!",
+  "status": "success",
+  "timestamp": "2025-03-25T22:15:30.987654",
+  "version": "1.1.0",
+  "environment": "prod",
+  "method": "POST"
+}
+```
 
-| Concept            | Windsurf Vibe Coding (Cascade)           | Cursor Analog(s)                                 |
-|--------------------|------------------------------------------|--------------------------------------------------|
-| **Memories**       | Persistent workspace/project context      | Codebase indexing, chat context, Project Rules    |
-| **Rules**          | `global_rules.md`, `.windsurfrules.md`   | Project Rules, User Rules, `.cursor/rules`        |
-| **Workflows**      | Declarative, AI-driven, multi-step flows | Agent Mode, Composer, multi-file/terminal actions |
+**Example Request:**
 
----
+```bash
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: YOUR_API_KEY" \
+  -d '{"name":"PostUser","message":"This is a POST request!"}' \
+  "https://your-api-id.execute-api.region.amazonaws.com/prod/hello"
+```
 
-**Tip:**  
-To translate your workflow from Windsurf to Cursor:
-- Store persistent context as Project Rules in `.cursor/rules`
-- Use Cursor’s Agent Mode for multi-step, context-aware automation
-- Leverage file pattern rules and chat context for granular control
+#### OPTIONS /hello
 
-Both platforms aim to make coding more collaborative and efficient by deeply integrating AI into the development process. Understanding these analogs helps teams move between environments while retaining best practices.
+Returns CORS headers for browser compatibility.
 
----
+**Response:**
 
-## 1. Rules: Definition, Structure, and Reuse
+```http
+HTTP/1.1 200 OK
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Methods: GET, POST, OPTIONS
+Access-Control-Allow-Headers: Content-Type, x-api-key
+```
 
-### a. `global_rules.md`
-- **Purpose:** Defines global standards and best practices (e.g., naming, security, CI/CD, Python style).
-- **Default Location:** User home directory: `~/.codeium/windsurf/memories/global_rules.md`
-- **Project Override (optional):** Project root: `./global_rules.md`
-- **Scaling/Reuse:**
-  - Update the global file for organization-wide standards.
-  - Add or override with a project-specific file as needed.
-  - Reference both in your `README.md` for clarity.
+### API Throttling
 
-### b. `.windsurfrules.md`
-- **Purpose:** Repository-specific rules and overrides.
-- **Default Location:** Project root: `./.windsurfrules.md`
-- **Scaling/Reuse:**
-  - Use as a template for new projects.
-  - Document project-specific exceptions to global rules.
+The API is configured with throttling to prevent abuse:
 
-### c. Additional Rules Files
-- **Purpose:** Define rules for submodules or components (e.g., `lambda_rules.md`).
-- **Default Location:** Project root: `./lambda_rules.md`
-- **Scaling/Reuse:**
-  - Reference these files in the main `README.md` and in related documentation.
-  - Use a consistent naming convention and document precedence.
+- **Rate Limit**: 0.033 requests per second (2 requests per minute)
+- **Burst Limit**: 2 requests
 
-### d. Referencing and Adding New Rules Files
-- List all rules files in this `README.md`.
-- Clearly state the scope and precedence of each file.
-- When adding a new component, create a rules file if unique standards are needed for that component.
+If you exceed these limits, you'll receive a 429 Too Many Requests response.
 
----
+## Project Structure
 
-## 2. Workflows: Windsurf Capability, Documentation, and Scaling
+```
+.
+├── lambda_function.py      # Lambda function handler
+├── requirements.txt        # Python dependencies
+├── requirements-dev.txt    # Development dependencies
+├── template.yaml           # CloudFormation template
+├── diagnose_api.sh         # Diagnostic script for API Gateway and Lambda
+├── manage_api_key.sh       # Script for API key management
+└── README.md               # This file
+```
 
-- **Definition:**
-  - **Windsurf Workflows** are a first-class, declarative automation capability built into Windsurf. They orchestrate sequences of actions (build, test, deploy, audit, etc.) in a context-aware, AI-assisted manner.
-  - Unlike traditional scripts or CI/CD pipelines, Windsurf Workflows are explicitly defined, versioned, and can reference project rules and memories for dynamic, intelligent automation.
+### Resource Naming Conventions
 
-- **Key Features:**
-  - Declarative YAML/JSON or markdown-based definitions (not just shell scripts)
-  - AI understands and adapts workflows based on current context, rules, and memories
-  - Can trigger on events (e.g., code push, PR, scheduled, manual)
-  - Integrated with rules enforcement and memory retrieval for traceable, compliant automation
+This project follows AWS best practices for resource naming to ensure compatibility and uniqueness:
 
-- **Location:**
-  - Define workflows in `windsurf_workflows/`, `workflows/`, or a dedicated section in your documentation (e.g., `docs/workflows.md`).
-  - Reference all active workflows in this `README.md` for discoverability.
-  - **Example:** See [`windsurf_workflows/test_and_lint.yaml`](./windsurf_workflows/test_and_lint.yaml) for a reusable, documented workflow that sets up Python, installs dependencies, lints, and tests your codebase.
+1. **Lambda Function Names**: Uses underscores as separators in the format `${LambdaFunctionName}_${StageName}_${DeploymentTimestamp}`
+   - Example: `HelloWorldFunction_prod_20250404095806`
 
-- **Creating and Reusing Workflows:**
-  - Use existing workflow templates or compose new ones using Windsurf’s declarative syntax.
-  - Parameterize workflows for reuse across projects or teams.
-  - Reference relevant rules (`global_rules.md`, `.windsurfrules.md`, etc.) and memories for context-aware execution.
+2. **API Gateway Stage Names**: Uses lowercase letters for stage names
+   - Example: `prod`, `dev`, `test`
 
-- **Scaling Workflows:**
-  - Maintain a central library of reusable workflows for your organization.
-  - Share, fork, and adapt workflows as your team or project grows.
-  - Use workflow inheritance or composition for complex automation scenarios.
+3. **API Keys and Usage Plans**: Includes timestamps to ensure uniqueness
+   - Example: `HelloWorldApiKey_20250404095806`
 
-- **Best Practice:**
-  - Document each workflow’s purpose, triggers, and rule/memory dependencies.
-  - Regularly review and refactor workflows to align with evolving standards and project needs.
+## API Key Management
 
----
+### Managing API Keys
 
-## 3. Memories: Persistent Project Knowledge
+The project includes a script for managing API keys:
 
-- **Definition:** Structured, persistent records of user stories, architectural decisions, traceability, and implementation details.
-- **Default Location:** User home directory: `~/.codeium/windsurf/memories/`
-- **Surfaced In:** Documentation (e.g., `user_stories.md`, `traceability_matrix.md`).
-- **Scaling/Reuse:**
-  - Use memories to automate onboarding and provide historical context.
-  - Update memories as the project evolves.
-  - Share or export memories to new projects for rapid knowledge transfer.
+```bash
+# Make the script executable
+chmod +x manage_api_key.sh
 
----
+# Create a new API key (replace with your stack name and stage)
+./manage_api_key.sh create HelloWorldApiStack prod
 
-## 4. Best Practices for Reuse and Scaling
+# List all existing API keys
+./manage_api_key.sh list
 
-- **Hierarchy:**
-  1. `global_rules.md` (organization-wide)
-  2. `.windsurfrules.md` (project-specific)
-  3. Component/module rules files (most specific)
-- **Documentation:**
-  - Always update this `README.md` with references to all rules, workflows, and memories.
-  - Maintain a traceability matrix linking user stories, rules, and implementation.
-- **Change Management:**
-  - Document rationale for rule changes in commit messages and memories.
-  - Communicate updates to the team.
-- **Automation:**
-  - Integrate rules and workflows into CI/CD pipelines for enforcement.
-  - Use memories to surface relevant context in code reviews and onboarding.
+# Delete an API key (replace with your API key ID)
+./manage_api_key.sh delete YOUR_API_KEY_ID
+```
 
----
+The script provides the following functionality:
 
-## 5. Cursor (AI-Assisted IDE) Analogs
+1. **Creating API Keys**: Creates a new API key, sets up a usage plan with throttling, and associates the key with the plan
+2. **Listing API Keys**: Shows all existing API keys in your AWS account
+3. **Deleting API Keys**: Removes an API key from your AWS account
 
-- **Rules Files:** Like `.editorconfig` or `CONTRIBUTING.md`, but AI-enforced and context-aware.
-- **Workflows:** Analogous to IDE build/run/debug tasks, but with AI-driven suggestions and updates.
-- **Memories:** Comparable to a persistent, searchable project knowledge base, with AI surfacing relevant context as you work.
+### Retrieving API Key Values
 
----
+There are several ways to retrieve your API key value:
 
-## 6. Scaling Across Teams and Projects
+#### 1. After Deployment
 
-- **Reuse rules and workflows** by templating and sharing across repositories.
-- **Centralize global rules** for consistency, and allow project/component overrides for flexibility.
-- **Leverage memories** to retain and transfer knowledge as teams grow or projects fork.
-- **Automate enforcement** using CI/CD and Windsurf’s AI capabilities.
+When you run `./run.sh cloudformation` or `./run.sh all`, the API key value is displayed in the console output and saved to the `.env` file.
 
----
+#### 2. Using the API Key Management Script
 
-**For further details, see:**
-- [`global_rules.md`](./global_rules.md)
-- [`.windsurfrules.md`](./.windsurfrules.md)
-- (Add links to any additional rules files as needed)
-- `user_stories.md`, `traceability_matrix.md`, and other docs for memories and workflows.
+```bash
+# Make the script executable
+chmod +x manage_api_key.sh
+
+# Retrieve API key value from stack
+./manage_api_key.sh get-api-key HelloWorldApiStack
+```
+
+This will display the API key information including the API key value and example curl commands.
+
+#### 3. Manual Retrieval Using AWS CLI
+
+You can also manually retrieve the API key value using AWS CLI commands:
+
+```bash
+# First, get the API key ID from the stack outputs
+API_KEY_ID=$(aws cloudformation describe-stacks --stack-name HelloWorldApiStack --query "Stacks[0].Outputs[?OutputKey=='ApiKeyId'].OutputValue" --output text)
+
+# Then, get the API key value
+aws apigateway get-api-key --api-key $API_KEY_ID --include-value --query "value" --output text
+```
+
+## Testing the API
+
+The project includes a built-in command to test the API with your API key:
+
+```bash
+./run.sh test-api
+```
+
+This will:
+
+1. Retrieve the API endpoint and key from CloudFormation outputs
+2. Make test requests to the API
+3. Display the responses
+
+Example output:
+```
+=== Testing API with API Key ===
+
+[WARN] Getting stack outputs...
+[OK] Found API endpoint: https://your-api-id.execute-api.region.amazonaws.com/prod/hello
+[OK] Found API Key ID: your-api-key-id
+[WARN] Retrieving API key value...
+[OK] Retrieved API key value.
+[WARN] Testing API without parameters...
+curl -H "x-api-key: your-api-key-value" "https://your-api-id.execute-api.region.amazonaws.com/prod/hello"
+
+Response: {"message":"Hello, World! The time is 2025-03-26 15:30:45.","status":"success","timestamp":"2025-03-26T15:30:45.123456","version":"1.1.0","environment":"prod"}
+
+[WARN] Testing API with name parameter...
+curl -H "x-api-key: your-api-key-value" "https://your-api-id.execute-api.region.amazonaws.com/prod/hello?name=TestUser"
+
+Response: {"message":"Hello, TestUser! The time is 2025-03-26 15:30:46.","status":"success","timestamp":"2025-03-26T15:30:46.789012","version":"1.1.0","environment":"prod"}
+```
+
+## Architecture
+
+This project follows AWS best practices and the Well-Architected Framework:
+
+1. **Serverless Architecture**: Uses AWS Lambda and API Gateway for a fully serverless solution with no servers to manage.
+
+2. **Security**:
+   - Implemented API key authentication to secure API access
+   - Added API throttling to prevent abuse and control costs
+
+3. **Operational Excellence**:
+   - Environment-Aware Configuration: The Lambda function now uses environment variables and adapts its behavior based on the environment (dev/prod).
+   - Comprehensive error handling and logging
+   - Diagnostic script for troubleshooting API Gateway and Lambda integration
+
+4. **CI/CD Pipeline**: Added GitHub Actions workflow for automated testing and deployment.
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Lambda Function Not Found**
+   - Ensure the Lambda function is deployed correctly
+   - Check the function name in the CloudFormation outputs
+   - Verify the function exists in the AWS Lambda console
+
+2. **API Key Not Working**
+   - Ensure the API key is enabled and associated with the correct usage plan
+   - Verify you're including the API key in the `x-api-key` header
+   - Check the API key value using the `manage_api_key.sh` script
+
+3. **CloudFormation Deployment Failures**
+   - Check the CloudFormation events in the AWS Console for specific error messages
+   - Ensure you have the necessary permissions to create all resources
+   - Verify the CloudFormation template is valid
+
+4. **Lambda Function Errors**
+   - Check the CloudWatch logs for the Lambda function
+   - Ensure the function has the necessary permissions
+   - Verify the function code is correct
+
+5. **API Gateway Configuration Issues**
+   - Run the diagnostic script: `./diagnose_api.sh HelloWorldApiStack`
+   - Ensure the API Gateway is configured correctly
+   - Verify the API Gateway is deployed to the correct stage
+   - Check the API Gateway logs in CloudWatch
+
+6. **API Gateway and Lambda Integration Issues**
+   - Ensure the API Gateway integration is set to AWS_PROXY and uses POST as the integration HTTP method
+   - Verify the Lambda function returns a properly formatted response with statusCode, headers, and body
+   - Check CloudWatch logs for any errors in the Lambda function execution
+
+7. **Missing API Key (HTTP 403 Forbidden)**
+   - If you receive a "Missing Authentication Token" or "Forbidden" error, ensure you're including the API key in your request
+   - The API key must be included in the `x-api-key` header: `curl -H "x-api-key: YOUR_API_KEY" "https://your-api-endpoint"`
+   - Verify the API key is valid and enabled in the AWS Console
+   - Check that the API key is associated with the correct usage plan
+
+8. **API Throttling (HTTP 429 Too Many Requests)**
+   - If you receive a "Too Many Requests" error, you've exceeded the throttling limits (2 requests per minute)
+   - Wait before making additional requests
+   - If you need higher limits, modify the usage plan in the AWS Console or update the `manage_api_key.sh` script
+
+### API Gateway "Internal Server Error"
+
+If you encounter an "Internal server error" when invoking your API Gateway endpoint, it's often due to permission issues between API Gateway and Lambda. Here are steps to diagnose and fix the issue:
+
+1. **Use the Diagnostic Script**: Run the included diagnostic script to automatically check your API Gateway and Lambda configuration:
+
+   ```bash
+   ./diagnose_api.sh HelloWorldApiStack
+   ```
+
+   This script will:
+   - Check Lambda function configuration and test direct invocation
+   - Verify CloudWatch logs are being generated
+   - Examine API Gateway resources and integration settings
+   - Validate Lambda permissions
+   - Test the API endpoint
+   - Provide suggested fixes for any issues found
+
+2. **Common Issues and Fixes**:
+
+   - **Lambda Permission Issue**: The most common cause is that API Gateway doesn't have permission to invoke your Lambda function. The fix is to add the correct permission:
+
+     ```bash
+     aws lambda add-permission \
+       --function-name <your-lambda-function-name> \
+       --statement-id apigateway-permission \
+       --action lambda:InvokeFunction \
+       --principal apigateway.amazonaws.com \
+       --source-arn "arn:aws:execute-api:<region>:<account-id>:<api-id>/*/GET/hello"
+     ```
+
+   - **Source ARN Format**: Note that the source ARN should use a wildcard for the stage (`/*`) to work with all stages.
+
+   - **API Gateway Deployment**: After making permission changes, you may need to create a new deployment:
+
+     ```bash
+     aws apigateway create-deployment --rest-api-id <api-id> --stage-name prod
+     ```
+
+3. **URL Query Parameter Escaping**: When using query parameters with special characters, ensure they are properly URL-encoded.
+
+### CloudWatch Logs
+
+If you need to check the Lambda function logs:
+
+```bash
+aws logs get-log-streams --log-group-name /aws/lambda/<your-lambda-function-name>
+aws logs get-log-events --log-group-name /aws/lambda/<your-lambda-function-name> --log-stream-name <log-stream-name>
+```
+
+## References
+
+- [AWS Lambda Developer Guide](https://docs.aws.amazon.com/lambda/latest/dg/welcome.html)
+- [Amazon API Gateway Developer Guide](https://docs.aws.amazon.com/apigateway/latest/developerguide/welcome.html)
+- [AWS CloudFormation User Guide](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/Welcome.html)
+- [AWS Systems Manager Parameter Store](https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-parameter-store.html)
+- [API Gateway Usage Plans and API Keys](https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-api-usage-plans.html)
+- [API Gateway Request Throttling](https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-request-throttling.html)
+- [Twelve-Factor App Methodology](https://12factor.net/)
+- [AWS Well-Architected Framework](https://aws.amazon.com/architecture/well-architected/)
