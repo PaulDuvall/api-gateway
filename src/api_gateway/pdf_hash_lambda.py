@@ -18,7 +18,7 @@ import traceback
 from datetime import datetime
 
 # Import the PDF hash service functions
-from pdf_hash_service import download_from_url, compute_sha256
+from api_gateway.pdf_hash_service import download_from_url, compute_sha256
 
 # Configure logging
 logger = logging.getLogger()
@@ -122,20 +122,20 @@ def lambda_handler(event, context):
         return response
     except Exception as e:
         # Log the full exception with traceback
-        logger.error("Error processing request: %s", str(e))
+        logger.error(f"Error processing request: {str(e)}")
         logger.error(traceback.format_exc())
-        
-        # Return a proper error response
+        import os
+        message = str(e) if os.environ.get('ENV') == 'test' else 'An unexpected error occurred'
         return {
-            "statusCode": 500,
-            "headers": {
+            'statusCode': 500,
+            'headers': {
                 "Content-Type": "application/json",
                 "Access-Control-Allow-Origin": "*"
             },
-            "body": json.dumps({
-                "error": "Internal server error",
-                "message": str(e) if ENVIRONMENT != 'prod' else "An unexpected error occurred",
-                "status": "error"
+            'body': json.dumps({
+                'status': 'error',
+                'error': 'Internal server error',
+                'message': message
             })
         }
 

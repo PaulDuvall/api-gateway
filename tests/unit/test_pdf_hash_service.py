@@ -32,7 +32,7 @@ sys.modules['reportlab.lib.pagesizes'] = MagicMock()
 sys.modules['reportlab.lib.pagesizes'].letter = (612, 792)  # Standard letter size in points
 
 # Now import the module
-import pdf_hash_service
+from api_gateway import pdf_hash_service
 
 
 class TestPdfHashService(unittest.TestCase):
@@ -63,7 +63,7 @@ class TestPdfHashService(unittest.TestCase):
         mock_buffer.getvalue.return_value = b'test pdf content'
         
         with patch('io.BytesIO', return_value=mock_buffer), \
-             patch('pdf_hash_service.canvas.Canvas') as mock_canvas:
+             patch('api_gateway.pdf_hash_service.canvas.Canvas') as mock_canvas:
             
             mock_instance = MagicMock()
             mock_canvas.return_value = mock_instance

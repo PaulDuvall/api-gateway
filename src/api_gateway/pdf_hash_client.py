@@ -20,7 +20,7 @@ import argparse
 from datetime import datetime
 
 # Import the PDF hash service functions
-from pdf_hash_service import generate_pdf, create_presigned_url, upload_to_presigned_url
+from api_gateway.pdf_hash_service import generate_pdf, create_presigned_url, upload_to_presigned_url
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')

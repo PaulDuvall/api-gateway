@@ -104,7 +104,7 @@ create_deployment_package() {
     mkdir -p package
     
     # Copy only the Lambda function to the package directory
-    cp lambda_function.py package/
+    cp src/api_gateway/lambda_function.py package/
     
     # Create the ZIP file
     cd package
@@ -129,8 +129,8 @@ create_pdf_hash_deployment_package() {
     mkdir -p package
     
     # Copy the Lambda function and service module to the package directory
-    cp pdf_hash_lambda.py package/
-    cp pdf_hash_service.py package/
+    cp src/api_gateway/pdf_hash_lambda.py package/
+    cp src/api_gateway/pdf_hash_service.py package/
     
     # Install dependencies to the package directory
     pip install -r requirements-prod.txt --target package/
@@ -445,7 +445,7 @@ test_pdf_hash_api() {
     
     print_warning "Running PDF hash workflow test..."
     # Run the PDF hash client
-    HASH_RESULT=$(python3 pdf_hash_client.py "Test PDF" "This is a test PDF document generated on $(date).")
+    HASH_RESULT=$(python3 src/api_gateway/pdf_hash_client.py "Test PDF" "This is a test PDF document generated on $(date).")
     
     if [ $? -eq 0 ] && [ ! -z "$HASH_RESULT" ]; then
         print_success "PDF hash workflow test completed successfully!"
@@ -453,7 +453,7 @@ test_pdf_hash_api() {
         
         print_section "PDF Hash API Usage Examples"
         echo -e "Example 1: Generate a PDF and compute its hash using the client script:"
-        echo -e "  python3 pdf_hash_client.py \"Your PDF Title\" \"Your PDF Content\""
+        echo -e "  python3 src/api_gateway/pdf_hash_client.py \"Your PDF Title\" \"Your PDF Content\""
         echo -e ""
         echo -e "Example 2: Call the PDF hash API directly with curl:"
         echo -e "  curl -X POST \\

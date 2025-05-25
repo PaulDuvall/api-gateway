@@ -30,12 +30,12 @@ sys.modules['reportlab.lib.pagesizes'] = MagicMock()
 sys.modules['reportlab.lib.pagesizes'].letter = (612, 792)  # Standard letter size in points
 
 # Now import the module
-import pdf_hash_client
+from api_gateway import pdf_hash_client
 
 # Replace the mocked functions with our test functions
-pdf_hash_client.generate_pdf = MagicMock()
-pdf_hash_client.create_presigned_url = MagicMock()
-pdf_hash_client.upload_to_presigned_url = MagicMock()
+patch('api_gateway.pdf_hash_client.generate_pdf').start()
+patch('api_gateway.pdf_hash_client.create_presigned_url').start()
+patch('api_gateway.pdf_hash_client.upload_to_presigned_url').start()
 
 
 class TestPdfHashClient(unittest.TestCase):
@@ -83,7 +83,7 @@ class TestPdfHashClient(unittest.TestCase):
         pdf_hash_client.create_presigned_url.return_value = f'https://{self.test_bucket_name}.s3.amazonaws.com/test-key?AWSAccessKeyId=test'
         pdf_hash_client.upload_to_presigned_url.return_value = True
         
-        with patch('pdf_hash_client.invoke_api') as mock_invoke_api:
+        with patch('api_gateway.pdf_hash_client.invoke_api') as mock_invoke_api:
             mock_invoke_api.return_value = {'hash': 'test-hash-value', 'status': 'success'}
             
             # Call the workflow function

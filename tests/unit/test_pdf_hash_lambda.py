@@ -30,7 +30,7 @@ sys.modules['reportlab.lib.pagesizes'] = MagicMock()
 sys.modules['reportlab.lib.pagesizes'].letter = (612, 792)  # Standard letter size in points
 
 # Now import the module
-import pdf_hash_lambda
+from api_gateway import pdf_hash_lambda
 
 # Replace the mocked functions with our test functions
 pdf_hash_lambda.download_from_url = MagicMock(return_value=b'test pdf content')
@@ -45,6 +45,7 @@ class TestPdfHashLambda(unittest.TestCase):
         # Mock environment variables
         self.test_bucket_name = 'helloworld-pdf-test-123456789012-us-east-1-20250404'
         self.env_patcher = patch.dict('os.environ', {
+            'ENV': 'test',
             'ENVIRONMENT': 'test',
             'S3_BUCKET_NAME': self.test_bucket_name,
             'S3_PRESIGNED_URL_EXPIRATION': '3600'
@@ -95,39 +96,26 @@ class TestPdfHashLambda(unittest.TestCase):
 
     def test_lambda_handler_error_handling(self):
         """Test lambda_handler error handling."""
-        # Mock the download to raise an exception for this test only
-        pdf_hash_lambda.download_from_url.side_effect = Exception('Test error')
-        
-        # Create a test event with a pre-signed URL in the body
-        event = {
-            'httpMethod': 'POST',
-            'path': '/pdf-hash',
-            'headers': {
-                'x-api-key': 'test-api-key'
-            },
-            'body': json.dumps({
-                'url': f'https://{self.test_bucket_name}.s3.amazonaws.com/test-key?AWSAccessKeyId=test'
-            })
-        }
-        context = MagicMock()
-
-        # Call the lambda handler
-        response = pdf_hash_lambda.lambda_handler(event, context)
-
-        # Assert the response structure for errors
-        self.assertEqual(response['statusCode'], 500)
-        self.assertIn('body', response)
-        
-        # Parse the body and check content
-        body = json.loads(response['body'])
-        self.assertEqual(body['status'], 'error')
-        self.assertIn('error', body)
-        # In test environment, we should see the actual error message
-        self.assertIn('message', body)
-        self.assertEqual(body['message'], 'Test error')
-        
-        # Reset the side_effect after this test
-        pdf_hash_lambda.download_from_url.side_effect = None
+        with patch('api_gateway.pdf_hash_lambda.download_from_url', side_effect=Exception('Test error')):
+            event = {
+                'httpMethod': 'POST',
+                'path': '/pdf-hash',
+                'headers': {
+                    'x-api-key': 'test-api-key'
+                },
+                'body': json.dumps({
+                    'url': f'https://{self.test_bucket_name}.s3.amazonaws.com/test-key?AWSAccessKeyId=test'
+                })
+            }
+            context = MagicMock()
+            response = pdf_hash_lambda.lambda_handler(event, context)
+            self.assertEqual(response['statusCode'], 500)
+            self.assertIn('body', response)
+            body = json.loads(response['body'])
+            self.assertEqual(body['status'], 'error')
+            self.assertIn('error', body)
+            self.assertIn('message', body)
+            self.assertEqual(body['message'], 'Test error')
 
     def test_lambda_handler_missing_url(self):
         """Test lambda_handler with missing URL parameter."""

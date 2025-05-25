@@ -171,8 +171,8 @@ fi
 print_header "Checking Lambda function code packaging"
 
 # Check if lambda_function.py exists in the current directory
-if [ -f "lambda_function.py" ]; then
-    print_success "Found lambda_function.py in the current directory"
+if [ -f "src/api_gateway/lambda_function.py" ]; then
+    print_success "Found lambda_function.py in src/api_gateway/ directory"
     
     # Check if deployment package exists
     if [ -f "lambda_deployment_package.zip" ]; then
@@ -195,7 +195,7 @@ if [ -f "lambda_function.py" ]; then
         print_warning "Suggested fix: Run './run.sh deploy' to create and deploy the package"
     fi
 else
-    print_error "lambda_function.py not found in the current directory"
+    print_error "lambda_function.py not found in src/api_gateway/ directory"
     print_error "This is required for the Lambda function to work"
 fi
 
