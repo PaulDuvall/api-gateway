@@ -4,6 +4,7 @@
 
 """
 Lambda function for the Hello World API.
+
 This module handles API Gateway requests and returns formatted responses.
 """
 
