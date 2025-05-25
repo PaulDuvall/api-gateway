@@ -310,8 +310,6 @@ api-gateway/
 └── README.md                       # Project documentation
 ```
 
-```
-
 ### Resource Naming Conventions
 
 This project follows AWS best practices for resource naming to ensure compatibility and uniqueness:
