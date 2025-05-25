@@ -1,3 +1,8 @@
+[![GitHub Actions Workflow Status](https://github.com/PaulDuvall/api-gateway/actions/workflows/run-all.yml/badge.svg)](https://github.com/PaulDuvall/api-gateway/actions/workflows/run-all.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+![Python](https://img.shields.io/badge/python-3.11-blue.svg)
+![GitHub last commit](https://img.shields.io/github/last-commit/PaulDuvall/api-gateway)
+
 # API Gateway & Lambda Automation Project
 
 This repository implements a robust, production-ready API platform using AWS Lambda, API Gateway, and CloudFormation, following modern Python and DevOps best practices.
