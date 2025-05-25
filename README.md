@@ -244,14 +244,45 @@ If you exceed these limits, you'll receive a 429 Too Many Requests response.
 ## Project Structure
 
 ```
-.
-├── lambda_function.py      # Lambda function handler
-├── requirements.txt        # Python dependencies
-├── requirements-dev.txt    # Development dependencies
-├── template.yaml           # CloudFormation template
-├── diagnose_api.sh         # Diagnostic script for API Gateway and Lambda
-├── manage_api_key.sh       # Script for API key management
-└── README.md               # This file
+Project Structure
+-----------------
+
+```
+api-gateway/
+├── src/
+│   └── api_gateway/
+│       ├── __init__.py
+│       ├── lambda_function.py      # Main Lambda function handler
+│       ├── pdf_hash_lambda.py      # PDF hash Lambda handler
+│       ├── pdf_hash_client.py      # PDF hash client logic
+│       └── pdf_hash_service.py     # PDF hash service logic
+├── requirements.txt                # Python dependencies
+├── requirements-dev.txt            # Development dependencies
+├── requirements-prod.txt           # Production dependencies
+├── template.yaml                   # CloudFormation template (IaC)
+├── run.sh                          # Main automation script (build, test, deploy)
+├── diagnose_api.sh                 # Diagnostic script for API Gateway and Lambda
+├── manage_api_key.sh               # Script for API key management
+├── pytest.ini                      # Pytest configuration
+├── output.json                     # Deployment outputs (endpoints, ARNs)
+├── docs/
+│   ├── architecture_diagrams.md    # AWS/cloud architecture diagrams
+│   ├── user_stories.md             # User stories documentation
+│   └── traceability_matrix.md      # Traceability matrix
+├── tests/                          # Unit and integration tests
+├── .github/
+│   └── workflows/
+│       └── run-all.yml             # GitHub Actions workflow
+├── .gitignore
+├── .awssecurityrules.md            # AWS security best practices
+├── .cicdrules.md                   # CI/CD standards
+├── .iamrolerules.md                # IAM role standards
+├── .refactoringrules.md            # Refactoring guidelines
+├── .windsurfrules.md               # Windsurf project rules
+├── global_rules.md                 # Centralized global rules
+└── README.md                       # Project documentation
+```
+
 ```
 
 ### Resource Naming Conventions
